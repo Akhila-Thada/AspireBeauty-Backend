@@ -18,7 +18,6 @@ exports.getAllProducts = async (req, res) => {
         p.id,
         p.name,
         p.sku,
-        p.price,
         p.gender,
         p.image1,
         p.image2,
@@ -53,6 +52,7 @@ exports.getAllProducts = async (req, res) => {
               'variant_image', s.varient_image,
               'product_image', s.product_image,
               'stock', s.stock,
+              'price', s.price,
               'pending', s.pending,
               'confirmed', s.confirmed
             )
@@ -144,9 +144,9 @@ exports.addProduct = async (req, res) => {
       gender = "unisex",
     } = req.body;
 
-    if (!name || !sku || !category_id || !price) {
+    if (!name || !sku || !category_id) {
       return res.status(400).json({
-        message: "Name, SKU, category and price are required",
+        message: "Name, SKU and category are required",
       });
     }
 
@@ -171,15 +171,14 @@ exports.addProduct = async (req, res) => {
     const [result] = await pool.query(
       `
       INSERT INTO ab_products
-      (name, sku, category_id, subcategory_id, price, gender, image1, image2, image3, image4)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (name, sku, category_id, subcategory_id, gender, image1, image2, image3, image4)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         name,
         sku,
         category_id,
         subcategory_id || null,
-        price,
         gender,
         image1,
         image2,
@@ -242,7 +241,6 @@ exports.updateProduct = async (req, res) => {
         sku = ?,
         category_id = ?,
         subcategory_id = ?,
-        price = ?,
         gender = ?,
         image1 = ?,
         image2 = ?,
@@ -255,7 +253,6 @@ exports.updateProduct = async (req, res) => {
         req.body.sku ?? existing[0].sku,
         req.body.category_id ?? existing[0].category_id,
         req.body.subcategory_id ?? existing[0].subcategory_id,
-        req.body.price ?? existing[0].price,
         req.body.gender ?? existing[0].gender,
         image1,
         image2,

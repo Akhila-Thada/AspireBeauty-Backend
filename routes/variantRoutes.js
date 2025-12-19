@@ -8,6 +8,12 @@ router.post(
   uploadFields([{ name: "varient_image" }, { name: "product_image" }]),
   variantController.addVariant
 );
+router.put(
+  "/:id",
+  uploadFields([{ name: "varient_image" }, { name: "product_image" }]),
+  variantController.updateVariant
+);
+
 router.get("/", variantController.getAllVariants);
 router.delete("/:id", variantController.deleteVariant);
 
