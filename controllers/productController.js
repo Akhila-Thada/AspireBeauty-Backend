@@ -283,7 +283,7 @@ exports.updateProduct = async (req, res) => {
       ]
     );
 
-    // 🔥 FETCH FULL UPDATED PRODUCT
+    //  FETCH FULL UPDATED PRODUCT
     const [rows] = await pool.query(
       `
       SELECT 

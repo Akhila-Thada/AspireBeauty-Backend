@@ -86,23 +86,7 @@ ORDER BY p.name, s.varient;
   }
 };
 
-// Delete Variant
-// exports.deleteVariant = async (req, res) => {
-//   try {
-//     const { id } = req.params;
 
-//     const [result] = await pool.query(`DELETE FROM ab_stock WHERE id = ?`, [id]);
-
-//     if (result.affectedRows === 0) {
-//       return res.status(404).json({ message: "Variant not found" });
-//     }
-
-//     res.json({ message: "Variant deleted successfully" });
-//   } catch (err) {
-//     console.error("Delete Variant Error:", err);
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 
 exports.deleteVariant = async (req, res) => {
   try {
