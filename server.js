@@ -13,20 +13,26 @@ const { Server } = require("socket.io");
 
 const io = new Server(http, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://aspire-beauty-dashboard-front-end.vercel.app', 'https://aspire-beauty-fornt-end.vercel.app','https://beauty.aspireths.com' ],
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true,
   },
 });
+// const io = new Server(http, {
+//   cors: {
+//     origin: ['http://localhost:5173', 'http://localhost:5174', 'https://aspire-beauty-dashboard-front-end.vercel.app', 'https://aspire-beauty-fornt-end.vercel.app','https://beauty.aspireths.com' ],
+//     credentials: true,
+//   },
+// });
 
 // Attach io globally (to use inside controllers)
 global.io = io;
 
 
 io.on("connection", (socket) => {
-  console.log("⚡ Client connected:", socket.id);
+  console.log("Client connected:", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
+    console.log("Client disconnected:", socket.id);
   });
 });
 
@@ -48,10 +54,10 @@ app.use(cors({
 (async () => {
   try {
     const connection = await db.getConnection();
-    console.log("✅ MySQL Connected");
+    console.log("MySQL Connected");
     connection.release();
   } catch (err) {
-    console.error("❌ MySQL Connection Failed:", err);
+    console.error("MySQL Connection Failed:", err);
   }
 })();
 
@@ -92,5 +98,5 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5001;
 
 http.listen(PORT, () => {
-  console.log(`🚀 Server + Socket.io running on port ${PORT}`);
+  console.log(`Server + Socket.io running on port ${PORT}`);
 });

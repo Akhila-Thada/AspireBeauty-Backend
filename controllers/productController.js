@@ -1,6 +1,8 @@
 const pool = require("../config/db");
 
-// helper
+/* =========================
+   HELPERS
+========================= */
 const getImageUrl = (req, img) => {
   if (!img) return null;
   return img.startsWith("http")
@@ -28,7 +30,6 @@ exports.getAllProducts = async (req, res) => {
         c.name AS category_name,
         sc.name AS subcategory_name,
 
-        -- Product Details
         pd.description,
         pd.ingredients,
         pd.how_to_use,
@@ -36,12 +37,10 @@ exports.getAllProducts = async (req, res) => {
         pd.features,
         pd.manufacturer_importer,
 
-        -- Stock Aggregates
         COALESCE(SUM(s.stock), 0) AS total_stock,
         COALESCE(SUM(s.pending), 0) AS pending_stock,
         COALESCE(SUM(s.confirmed), 0) AS confirmed_stock,
 
-        -- Variants JSON
         JSON_ARRAYAGG(
           IF(
             s.id IS NULL,
@@ -58,30 +57,21 @@ exports.getAllProducts = async (req, res) => {
             )
           )
         ) AS variants
-
       FROM ab_products p
       LEFT JOIN ab_categories c ON c.id = p.category_id
       LEFT JOIN ab_subcategories sc ON sc.id = p.subcategory_id
       LEFT JOIN ab_product_details pd ON pd.productid = p.id
       LEFT JOIN ab_stock s ON s.productid = p.id
-
       GROUP BY p.id
       ORDER BY p.created_at DESC
     `);
 
-    // Clean null variants
     const products = rows.map((p) => ({
       ...p,
-      variants: Array.isArray(p.variants)
-        ? p.variants.filter((v) => v !== null)
-        : [],
+      variants: p.variants?.filter((v) => v !== null) || [],
     }));
 
-    res.json({
-      success: true,
-      count: products.length,
-      products,
-    });
+    res.json({ success: true, products });
   } catch (err) {
     console.error("Get Products Error:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -100,10 +90,10 @@ exports.getProductById = async (req, res) => {
       SELECT 
         p.*,
         c.name AS category_name,
-        s.name AS subcategory_name
+        sc.name AS subcategory_name
       FROM ab_products p
       LEFT JOIN ab_categories c ON p.category_id = c.id
-      LEFT JOIN ab_subcategories s ON p.subcategory_id = s.id
+      LEFT JOIN ab_subcategories sc ON p.subcategory_id = sc.id
       WHERE p.id = ?
       `,
       [id]
@@ -135,19 +125,13 @@ exports.addProduct = async (req, res) => {
   try {
     const BASE_URL = `${req.protocol}://${req.get("host")}/uploads/`;
 
-    const {
-      name,
-      sku,
-      category_id,
-      subcategory_id,
-      price,
-      gender = "unisex",
-    } = req.body;
+    const { name, sku, category_id, subcategory_id, gender = "unisex" } =
+      req.body;
 
     if (!name || !sku || !category_id) {
-      return res.status(400).json({
-        message: "Name, SKU and category are required",
-      });
+      return res
+        .status(400)
+        .json({ message: "Name, SKU and category are required" });
     }
 
     const files = req.files || {};
@@ -155,15 +139,12 @@ exports.addProduct = async (req, res) => {
     const image1 = files.image1?.[0]?.filename
       ? BASE_URL + files.image1[0].filename
       : null;
-
     const image2 = files.image2?.[0]?.filename
       ? BASE_URL + files.image2[0].filename
       : null;
-
     const image3 = files.image3?.[0]?.filename
       ? BASE_URL + files.image3[0].filename
       : null;
-
     const image4 = files.image4?.[0]?.filename
       ? BASE_URL + files.image4[0].filename
       : null;
@@ -187,9 +168,54 @@ exports.addProduct = async (req, res) => {
       ]
     );
 
+    const productId = result.insertId;
+
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        p.id,
+        p.name,
+        p.sku,
+        p.gender,
+        p.image1,
+        p.image2,
+        p.image3,
+        p.image4,
+        c.name AS category_name,
+        sc.name AS subcategory_name,
+        COALESCE(SUM(s.stock), 0) AS total_stock,
+        JSON_ARRAYAGG(
+          IF(
+            s.id IS NULL,
+            NULL,
+            JSON_OBJECT(
+              'variantId', s.id,
+              'variant', s.varient,
+              'price', s.price,
+              'stock', s.stock
+            )
+          )
+        ) AS variants
+      FROM ab_products p
+      LEFT JOIN ab_categories c ON c.id = p.category_id
+      LEFT JOIN ab_subcategories sc ON sc.id = p.subcategory_id
+      LEFT JOIN ab_stock s ON s.productid = p.id
+      WHERE p.id = ?
+      GROUP BY p.id
+      `,
+      [productId]
+    );
+
+    const fullProduct = {
+      ...rows[0],
+      variants: rows[0].variants?.filter((v) => v !== null) || [],
+    };
+
+    global.io.emit("product:created", fullProduct);
+
     res.status(201).json({
       message: "Product added successfully",
-      id: result.insertId,
+      product: fullProduct,
     });
   } catch (error) {
     console.error("addProduct error:", error);
@@ -197,11 +223,9 @@ exports.addProduct = async (req, res) => {
   }
 };
 
-
 /* =========================
    UPDATE PRODUCT
 ========================= */
-
 exports.updateProduct = async (req, res) => {
   try {
     const BASE_URL = `${req.protocol}://${req.get("host")}/uploads/`;
@@ -221,15 +245,12 @@ exports.updateProduct = async (req, res) => {
     const image1 = files.image1?.[0]?.filename
       ? BASE_URL + files.image1[0].filename
       : existing[0].image1;
-
     const image2 = files.image2?.[0]?.filename
       ? BASE_URL + files.image2[0].filename
       : existing[0].image2;
-
     const image3 = files.image3?.[0]?.filename
       ? BASE_URL + files.image3[0].filename
       : existing[0].image3;
-
     const image4 = files.image4?.[0]?.filename
       ? BASE_URL + files.image4[0].filename
       : existing[0].image4;
@@ -262,13 +283,56 @@ exports.updateProduct = async (req, res) => {
       ]
     );
 
+    // 🔥 FETCH FULL UPDATED PRODUCT
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        p.id,
+        p.name,
+        p.sku,
+        p.gender,
+        p.image1,
+        p.image2,
+        p.image3,
+        p.image4,
+        c.name AS category_name,
+        sc.name AS subcategory_name,
+        COALESCE(SUM(s.stock), 0) AS total_stock,
+        JSON_ARRAYAGG(
+          IF(
+            s.id IS NULL,
+            NULL,
+            JSON_OBJECT(
+              'variantId', s.id,
+              'variant', s.varient,
+              'price', s.price,
+              'stock', s.stock
+            )
+          )
+        ) AS variants
+      FROM ab_products p
+      LEFT JOIN ab_categories c ON c.id = p.category_id
+      LEFT JOIN ab_subcategories sc ON sc.id = p.subcategory_id
+      LEFT JOIN ab_stock s ON s.productid = p.id
+      WHERE p.id = ?
+      GROUP BY p.id
+      `,
+      [id]
+    );
+
+    const fullUpdatedProduct = {
+      ...rows[0],
+      variants: rows[0].variants?.filter((v) => v !== null) || [],
+    };
+
+    global.io.emit("product:updated", fullUpdatedProduct);
+
     res.json({ message: "Product updated successfully" });
   } catch (error) {
     console.error("updateProduct error:", error);
     res.status(500).json({ error: error.message });
   }
 };
-
 
 /* =========================
    DELETE PRODUCT
@@ -285,6 +349,8 @@ exports.deleteProduct = async (req, res) => {
     if (!result.affectedRows) {
       return res.status(404).json({ message: "Product not found" });
     }
+
+    global.io.emit("product:deleted", Number(id));
 
     res.json({ message: "Product deleted successfully" });
   } catch (error) {
