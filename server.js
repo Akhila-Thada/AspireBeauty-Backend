@@ -16,15 +16,9 @@ const io = new Server(http, {
     origin: ['http://localhost:5173', 'http://localhost:5174', 'https://aspire-beauty-dashboard-front-end.vercel.app', 'https://aspire-beauty-fornt-end.vercel.app','https://beauty.aspireths.com'],
     credentials: true,
   },
+   transports: ["websocket", "polling"],
 });
-// const io = new Server(http, {
-//   cors: {
-//     origin: ['http://localhost:5173', 'http://localhost:5174', 'https://aspire-beauty-dashboard-front-end.vercel.app', 'https://aspire-beauty-fornt-end.vercel.app','https://beauty.aspireths.com' ],
-//     credentials: true,
-//   },
-// });
 
-// Attach io globally (to use inside controllers)
 global.io = io;
 
 
