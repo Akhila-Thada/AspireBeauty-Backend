@@ -13,7 +13,7 @@ const { Server } = require("socket.io");
 
 const io = new Server(http, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://aspire-beauty-dashboard-front-end.vercel.app', 'https://aspire-beauty-fornt-end.vercel.app','https://beauty.aspireths.com'],
+    origin: ['http://localhost:5173', 'http://localhost:5174','https://aspire-beauty-dashboard-frontend.vercel.app', 'https://aspire-beauty.vercel.app'],
     credentials: true,
   },
    transports: ["websocket", "polling"],
@@ -34,9 +34,8 @@ io.on("connection", (socket) => {
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://aspire-beauty-dashboard-front-end.vercel.app",
-  "https://aspire-beauty-fornt-end.vercel.app",
-  "https://beauty.aspireths.com"
+  "https://aspire-beauty.vercel.app",
+  "https://aspire-beauty-dashboard-frontend.vercel.app"
 ];
 
 app.use(cors({
