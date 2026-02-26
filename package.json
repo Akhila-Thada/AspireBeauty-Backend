@@ -4,7 +4,7 @@
   "description": "backend folder for aspire beauty",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server",
+    "start": "node server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Thada Akhila",
